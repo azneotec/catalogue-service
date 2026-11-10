@@ -16,6 +16,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
@@ -37,6 +39,9 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 @RequestMapping(path = "/admin", produces = MediaType.APPLICATION_JSON_VALUE)
 @Tag(name = "admin", description = "Organiser API; localhost only until Phase 2")
 class AdminController {
+
+  // Admin changes are logged: a small audit trail, and with tracing each line carries the trace id.
+  private static final Logger log = LoggerFactory.getLogger(AdminController.class);
 
   private final CreateVenue createVenue;
   private final GetVenue getVenue;
@@ -68,6 +73,7 @@ class AdminController {
               schema = @Schema(implementation = ProblemDetail.class)))
   ResponseEntity<VenueDto> createVenue(@Valid @RequestBody CreateVenueRequest body) {
     var venue = createVenue.createVenue(body.toCommand());
+    log.info("Created venue {} ({}, {})", venue.id(), venue.name(), venue.city());
     return ResponseEntity.created(locationOf(venue.id().value())).body(VenueDto.from(venue));
   }
 
@@ -109,6 +115,7 @@ class AdminController {
               schema = @Schema(implementation = ProblemDetail.class)))
   ResponseEntity<EventDto> createEvent(@Valid @RequestBody CreateEventRequest body) {
     var event = createEvent.createEvent(body.toCommand());
+    log.info("Created draft event {} '{}' at venue {}", event.id(), event.title(), event.venueId());
     return ResponseEntity.created(locationOf(event.id().value()))
         .eTag(ETags.of(event.version()))
         .body(EventDto.from(event));
@@ -182,6 +189,7 @@ class AdminController {
       @RequestHeader(name = HttpHeaders.IF_MATCH, required = false) String ifMatch) {
     var expectedVersion = ETags.requiredVersion(ifMatch);
     var event = publishEvent.publishEvent(new EventId(id), expectedVersion);
+    log.info("Published event {} (version {} -> {})", event.id(), expectedVersion, event.version());
     return ResponseEntity.ok().eTag(ETags.of(event.version())).body(EventDto.from(event));
   }
 
