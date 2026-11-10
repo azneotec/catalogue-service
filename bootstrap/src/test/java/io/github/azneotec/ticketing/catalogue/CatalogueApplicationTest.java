@@ -111,6 +111,9 @@ class CatalogueApplicationTest extends IntegrationTestBase {
                 new String[] {
                   "--server.port=0",
                   "--spring.grpc.server.port=0",
+                  "--management.tracing.export.otlp.enabled=false",
+                  "--management.otlp.metrics.export.enabled=false",
+                  "--management.logging.export.otlp.enabled=false",
                   "--spring.datasource.url=" + POSTGRES.getJdbcUrl(),
                   "--spring.datasource.username=" + POSTGRES.getUsername(),
                   "--spring.datasource.password=" + POSTGRES.getPassword()

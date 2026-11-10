@@ -11,7 +11,13 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
  */
 @SpringBootTest(
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-    properties = "spring.grpc.server.port=0") // random free port, like the HTTP server
+    properties = {
+      "spring.grpc.server.port=0", // random free port, like the HTTP server
+      // Tests never send telemetry to a running Grafana stack.
+      "management.tracing.export.otlp.enabled=false",
+      "management.otlp.metrics.export.enabled=false",
+      "management.logging.export.otlp.enabled=false"
+    })
 abstract class IntegrationTestBase {
 
   @ServiceConnection

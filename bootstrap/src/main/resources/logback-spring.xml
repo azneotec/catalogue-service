@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Spring Boot's default console logging (with trace id and span id in every line, added by Boot
+  when tracing is on), plus an OpenTelemetry appender that sends the same records over OTLP.
+  The appender is connected to the SDK at startup by OpenTelemetryLogging.
+-->
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/base.xml"/>
+
+    <appender name="OTEL" class="io.opentelemetry.instrumentation.logback.appender.v1_0.OpenTelemetryAppender">
+        <!-- Logger name and thread as attributes; code location costs a stack walk per line, so off. -->
+        <captureExperimentalAttributes>true</captureExperimentalAttributes>
+        <captureCodeAttributes>false</captureCodeAttributes>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="OTEL"/>
+    </root>
+</configuration>
