@@ -23,4 +23,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "catalogue-service"
 
-include("domain", "application", "adapter-persistence", "bootstrap")
+include("domain", "application", "adapter-persistence", "adapter-rest", "bootstrap")

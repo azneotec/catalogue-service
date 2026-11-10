@@ -61,6 +61,13 @@ class EventServiceTest {
   }
 
   @Test
+  void getVenueFindsAStoredVenueOnly() {
+    var venues = new VenueService(venueRepository);
+    assertThat(venues.getVenue(venue.id())).contains(venue);
+    assertThat(venues.getVenue(VenueId.newId())).isEmpty();
+  }
+
+  @Test
   void createEventStoresADraftAtTheVenue() {
     var event = service.createEvent(command("Concert", Duration.ofDays(30)));
 

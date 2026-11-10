@@ -9,9 +9,8 @@ dependencies {
     implementation(project(":domain"))
     implementation(project(":application"))
     implementation(project(":adapter-persistence"))
+    implementation(project(":adapter-rest"))
     implementation(libs.spring.boot.starter.actuator)
-    // Web server only for actuator health in session 006; REST endpoints arrive in session 007.
-    implementation(libs.spring.boot.starter.webmvc)
 
     testImplementation(libs.spring.boot.starter.test)
     testImplementation(libs.spring.boot.testcontainers)
