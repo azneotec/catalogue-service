@@ -10,10 +10,12 @@ dependencies {
     implementation(project(":application"))
     implementation(project(":adapter-persistence"))
     implementation(libs.spring.boot.starter.actuator)
-    implementation(libs.spring.boot.starter.data.jpa) // JPA auto-configuration for the adapter
+    // Web server only for actuator health in session 006; REST endpoints arrive in session 007.
+    implementation(libs.spring.boot.starter.webmvc)
 
     testImplementation(libs.spring.boot.starter.test)
     testImplementation(libs.spring.boot.testcontainers)
     testImplementation(libs.testcontainers.postgresql)
+    testImplementation(libs.spring.boot.starter.data.jpa) // JdbcClient in the startup test
     testImplementation("io.github.azneotec.ticketing:ticketing-arch-rules:$ticketingConventionsVersion")
 }
