@@ -6,12 +6,18 @@ import io.github.azneotec.ticketing.catalogue.application.port.in.GetEvent;
 import io.github.azneotec.ticketing.catalogue.application.port.in.ListEvents;
 import io.github.azneotec.ticketing.catalogue.domain.event.EventId;
 import io.github.azneotec.ticketing.catalogue.domain.event.EventStatus;
+import io.swagger.v3.oas.annotations.headers.Header;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import java.util.Set;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -22,7 +28,7 @@ import org.springframework.web.context.request.WebRequest;
 
 /** Public, read-only API for buyers. Drafts are invisible here: they exist only for organisers. */
 @RestController
-@RequestMapping("/events")
+@RequestMapping(path = "/events", produces = MediaType.APPLICATION_JSON_VALUE)
 @Tag(name = "events", description = "Public event catalogue")
 class EventController {
 
@@ -36,6 +42,14 @@ class EventController {
 
   /** Events in the given states (published by default), soonest first. */
   @GetMapping
+  @ApiResponse(responseCode = "200", description = "A page of events")
+  @ApiResponse(
+      responseCode = "400",
+      description = "Bad status or paging",
+      content =
+          @Content(
+              mediaType = "application/problem+json",
+              schema = @Schema(implementation = ProblemDetail.class)))
   PageDto<EventSummaryDto> list(
       @RequestParam(defaultValue = "PUBLISHED") Set<EventStatus.Code> status,
       @RequestParam(defaultValue = "0") @Min(0) int page,
@@ -56,6 +70,18 @@ class EventController {
    * {@code If-None-Match} gets {@code 304 Not Modified} without a body while nothing has changed.
    */
   @GetMapping("/{id}")
+  @ApiResponse(
+      responseCode = "200",
+      description = "The event",
+      headers = @Header(name = "ETag", description = "Version of the event, e.g. \"3\""))
+  @ApiResponse(responseCode = "304", description = "Not modified since the If-None-Match ETag")
+  @ApiResponse(
+      responseCode = "404",
+      description = "No such published or cancelled event",
+      content =
+          @Content(
+              mediaType = "application/problem+json",
+              schema = @Schema(implementation = ProblemDetail.class)))
   ResponseEntity<EventDto> get(@PathVariable UUID id, WebRequest request) {
     var event =
         getEvent

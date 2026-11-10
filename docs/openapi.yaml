@@ -1,0 +1,451 @@
+openapi: 3.1.0
+info:
+  description: "Events, venues and seat maps. Errors are Problem Details (RFC 9457).\
+    \ /admin is localhost only until Phase 2."
+  title: Catalogue API
+  version: "1"
+servers:
+- description: local
+  url: http://localhost:8080
+tags:
+- description: Public event catalogue
+  name: events
+- description: Organiser API; localhost only until Phase 2
+  name: admin
+paths:
+  /admin/events:
+    post:
+      operationId: createEvent
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateEventRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventDto"
+          description: Created as a draft; Location and ETag set
+          headers:
+            ETag:
+              description: Version of the event
+              style: simple
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Invalid event
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: No such venue
+      tags:
+      - admin
+  /admin/events/{id}:
+    get:
+      operationId: getEvent
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventDto"
+          description: The event
+          headers:
+            ETag:
+              description: Version of the event
+              style: simple
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: No such event
+      tags:
+      - admin
+  /admin/events/{id}/publish:
+    post:
+      operationId: publish
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - in: header
+        name: If-Match
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventDto"
+          description: Published
+          headers:
+            ETag:
+              description: New version of the event
+              style: simple
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Malformed If-Match
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: No such event
+        "409":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Not a draft, or starts in the past"
+        "412":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Stale If-Match: the event changed"
+        "428":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: If-Match missing
+      tags:
+      - admin
+  /admin/venues:
+    post:
+      operationId: createVenue
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateVenueRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VenueDto"
+          description: Created; Location points at the venue
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Invalid venue
+      tags:
+      - admin
+  /admin/venues/{id}:
+    get:
+      operationId: getVenue
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VenueDto"
+          description: The venue
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: No such venue
+      tags:
+      - admin
+  /events:
+    get:
+      operationId: list
+      parameters:
+      - in: query
+        name: status
+        required: false
+        schema:
+          type: array
+          default:
+          - PUBLISHED
+          items:
+            type: string
+            enum:
+            - DRAFT
+            - PUBLISHED
+            - CANCELLED
+          uniqueItems: true
+      - in: query
+        name: page
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 0
+          minimum: 0
+      - in: query
+        name: size
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 20
+          maximum: 100
+          minimum: 1
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PageDtoEventSummaryDto"
+          description: A page of events
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Bad status or paging
+      tags:
+      - events
+  /events/{id}:
+    get:
+      operationId: get
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventDto"
+          description: The event
+          headers:
+            ETag:
+              description: "Version of the event, e.g. \"3\""
+              style: simple
+        "304":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventDto"
+          description: Not modified since the If-None-Match ETag
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: No such published or cancelled event
+      tags:
+      - events
+components:
+  schemas:
+    CreateEventRequest:
+      type: object
+      properties:
+        seatMap:
+          $ref: "#/components/schemas/SeatMapDto"
+        startsAt:
+          type: string
+          format: date-time
+        title:
+          type: string
+          minLength: 1
+        venueId:
+          type: string
+          format: uuid
+      required:
+      - seatMap
+      - startsAt
+      - title
+      - venueId
+    CreateVenueRequest:
+      type: object
+      properties:
+        city:
+          type: string
+          minLength: 1
+        name:
+          type: string
+          minLength: 1
+        zone:
+          type: string
+      required:
+      - city
+      - name
+      - zone
+    EventDto:
+      type: object
+      properties:
+        cancelReason:
+          type: string
+        cancelledAt:
+          type: string
+          format: date-time
+        capacity:
+          type: integer
+          format: int32
+        id:
+          type: string
+          format: uuid
+        localStartTime:
+          type: string
+          format: date-time
+        publishedAt:
+          type: string
+          format: date-time
+        seatMap:
+          $ref: "#/components/schemas/SeatMapDto"
+        startsAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+        title:
+          type: string
+        venueId:
+          type: string
+          format: uuid
+        zone:
+          type: string
+    EventSummaryDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        localStartTime:
+          type: string
+          format: date-time
+        startsAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+        title:
+          type: string
+        venueCity:
+          type: string
+        venueName:
+          type: string
+        zone:
+          type: string
+    PageDtoEventSummaryDto:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/EventSummaryDto"
+        page:
+          type: integer
+          format: int32
+        size:
+          type: integer
+          format: int32
+        totalItems:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+    ProblemDetail:
+      type: object
+      properties:
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri
+        properties:
+          type: object
+          additionalProperties: {}
+        status:
+          type: integer
+          format: int32
+        title:
+          type: string
+        type:
+          type: string
+          format: uri
+    RowDto:
+      type: object
+      properties:
+        label:
+          type: string
+          minLength: 1
+        seats:
+          type: array
+          items:
+            type: string
+            minLength: 1
+          minItems: 1
+      required:
+      - label
+      - seats
+    SeatMapDto:
+      type: object
+      properties:
+        sections:
+          type: array
+          items:
+            $ref: "#/components/schemas/SectionDto"
+          minItems: 1
+      required:
+      - sections
+    SectionDto:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        rows:
+          type: array
+          items:
+            $ref: "#/components/schemas/RowDto"
+          minItems: 1
+      required:
+      - name
+      - rows
+    VenueDto:
+      type: object
+      properties:
+        city:
+          type: string
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        zone:
+          type: string

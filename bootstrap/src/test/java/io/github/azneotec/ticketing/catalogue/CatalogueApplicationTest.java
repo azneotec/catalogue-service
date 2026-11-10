@@ -28,26 +28,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.SpringApplicationHook;
 import org.springframework.boot.SpringApplicationRunListener;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.jdbc.core.simple.JdbcClient;
-import org.testcontainers.postgresql.PostgreSQLContainer;
 
 /** The whole service, wired by Spring, against a real Postgres: migrations, use cases, health. */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-class CatalogueApplicationTest {
-
-  @ServiceConnection
-  static final PostgreSQLContainer POSTGRES =
-      new PostgreSQLContainer("postgres:18.6-alpine")
-          .withCreateContainerCmdModifier(
-              cmd -> cmd.getHostConfig().withMemory(256L * 1024 * 1024));
-
-  static {
-    POSTGRES.start();
-  }
+class CatalogueApplicationTest extends IntegrationTestBase {
 
   @LocalServerPort int port;
   @Autowired JdbcClient jdbc;
