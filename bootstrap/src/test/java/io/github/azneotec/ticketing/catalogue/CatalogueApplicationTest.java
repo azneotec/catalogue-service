@@ -110,6 +110,7 @@ class CatalogueApplicationTest extends IntegrationTestBase {
             CatalogueApplication.main(
                 new String[] {
                   "--server.port=0",
+                  "--spring.grpc.server.port=0",
                   "--spring.datasource.url=" + POSTGRES.getJdbcUrl(),
                   "--spring.datasource.username=" + POSTGRES.getUsername(),
                   "--spring.datasource.password=" + POSTGRES.getPassword()

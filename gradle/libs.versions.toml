@@ -3,6 +3,11 @@
 [versions]
 # Not managed by Spring Boot. 3.2.x is built against Spring Boot 4.1.
 springdoc = "3.2.0"
+# Our gRPC contracts (mavenLocal) and the grpc-java version they were built with. Spring Boot's
+# BOM pins grpc-java 1.84.1; the grpc BOM aligns every io.grpc module to the contracts' version,
+# because mixed grpc-java versions fail at runtime.
+ticketing-contracts = "0.1.1"
+grpc = "1.85.1"
 
 [libraries]
 spring-boot-starter-data-jpa = { module = "org.springframework.boot:spring-boot-starter-data-jpa" }
@@ -11,6 +16,12 @@ spring-boot-starter-actuator = { module = "org.springframework.boot:spring-boot-
 spring-boot-starter-webmvc = { module = "org.springframework.boot:spring-boot-starter-webmvc" }
 spring-boot-starter-webmvc-test = { module = "org.springframework.boot:spring-boot-starter-webmvc-test" }
 spring-boot-starter-validation = { module = "org.springframework.boot:spring-boot-starter-validation" }
+spring-boot-starter-grpc-server = { module = "org.springframework.boot:spring-boot-starter-grpc-server" }
+spring-boot-starter-grpc-server-test = { module = "org.springframework.boot:spring-boot-starter-grpc-server-test" }
+grpc-bom = { module = "io.grpc:grpc-bom", version.ref = "grpc" }
+grpc-inprocess = { module = "io.grpc:grpc-inprocess" }
+grpc-services = { module = "io.grpc:grpc-services" }
+ticketing-contracts-grpc = { module = "io.github.azneotec.ticketing:ticketing-contracts-grpc", version.ref = "ticketing-contracts" }
 springdoc-webmvc-ui = { module = "org.springdoc:springdoc-openapi-starter-webmvc-ui", version.ref = "springdoc" }
 spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test" }
 spring-boot-testcontainers = { module = "org.springframework.boot:spring-boot-testcontainers" }

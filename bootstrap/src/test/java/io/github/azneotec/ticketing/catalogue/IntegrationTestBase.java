@@ -9,7 +9,9 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
  * this, so they share one container and one cached Spring context (same configuration = same cache
  * key) instead of starting one of each per test class.
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(
+    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+    properties = "spring.grpc.server.port=0") // random free port, like the HTTP server
 abstract class IntegrationTestBase {
 
   @ServiceConnection

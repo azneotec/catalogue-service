@@ -10,10 +10,16 @@ dependencies {
     implementation(project(":application"))
     implementation(project(":adapter-persistence"))
     implementation(project(":adapter-rest"))
+    implementation(project(":adapter-grpc"))
+    implementation(platform(libs.grpc.bom))
     implementation(libs.spring.boot.starter.actuator)
 
     testImplementation(libs.spring.boot.starter.test)
     testImplementation(libs.spring.boot.starter.webmvc) // RestClient in the HTTP tests
+    testImplementation(platform(libs.grpc.bom))
+    testImplementation(libs.ticketing.contracts.grpc) // client stubs for the gRPC test
+    testImplementation(libs.grpc.services) // standard health service stubs
+    testImplementation(libs.spring.boot.starter.grpc.server.test) // @LocalGrpcServerPort
     testImplementation(libs.spring.boot.testcontainers)
     testImplementation(libs.testcontainers.postgresql)
     testImplementation(libs.spring.boot.starter.data.jpa) // JdbcClient in the startup test
