@@ -1,5 +1,6 @@
 package io.github.azneotec.ticketing.catalogue.application.service;
 
+import io.github.azneotec.ticketing.catalogue.application.ConcurrentUpdateException;
 import io.github.azneotec.ticketing.catalogue.application.EventSummary;
 import io.github.azneotec.ticketing.catalogue.application.NotFoundException;
 import io.github.azneotec.ticketing.catalogue.application.Page;
@@ -45,11 +46,16 @@ public final class EventService implements CreateEvent, PublishEvent, GetEvent, 
   /**
    * Read and write run in separate short transactions. The version read here travels with the
    * aggregate, so if anyone saves the event in between, our save fails instead of overwriting their
-   * change (optimistic locking, see the persistence adapter).
+   * change (optimistic locking, see the persistence adapter). The caller's expected version is
+   * checked first, so a client acting on an old copy is rejected even when nobody is saving right
+   * now.
    */
   @Override
-  public Event publishEvent(EventId id) {
+  public Event publishEvent(EventId id, long expectedVersion) {
     var event = events.findById(id).orElseThrow(() -> new NotFoundException("event", id));
+    if (event.version() != expectedVersion) {
+      throw new ConcurrentUpdateException("event", id);
+    }
     event.publish(clock.instant());
     // Phase 2: an outbox stores event.pullDomainEvents() in the same transaction as the save.
     return events.save(event);

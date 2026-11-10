@@ -78,7 +78,7 @@ class CatalogueApplicationTest {
             new CreateEvent.Command(
                 "Concert", venue.id(), Instant.now().plus(Duration.ofDays(30)), seatMap));
 
-    publishEvent.publishEvent(event.id());
+    publishEvent.publishEvent(event.id(), event.version());
 
     assertThat(getEvent.getEvent(event.id()).orElseThrow().status())
         .isInstanceOf(EventStatus.Published.class);

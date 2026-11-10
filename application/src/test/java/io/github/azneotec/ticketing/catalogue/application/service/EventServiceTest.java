@@ -83,7 +83,7 @@ class EventServiceTest {
   void publishEventUsesTheClockAndBumpsTheVersion() {
     var created = service.createEvent(command("Concert", Duration.ofDays(30)));
 
-    var published = service.publishEvent(created.id());
+    var published = service.publishEvent(created.id(), created.version());
 
     assertThat(published.status()).isEqualTo(new EventStatus.Published(NOW));
     assertThat(published.version()).isEqualTo(created.version() + 1);
@@ -94,18 +94,31 @@ class EventServiceTest {
   @Test
   void publishEventFailsForUnknownOrIllegalEvents() {
     var unknown = EventId.newId();
-    assertThatThrownBy(() -> service.publishEvent(unknown)).isInstanceOf(NotFoundException.class);
+    assertThatThrownBy(() -> service.publishEvent(unknown, 0))
+        .isInstanceOf(NotFoundException.class);
 
     var started = service.createEvent(command("Too late", Duration.ofHours(-1)));
-    assertThatThrownBy(() -> service.publishEvent(started.id()))
+    assertThatThrownBy(() -> service.publishEvent(started.id(), started.version()))
         .isInstanceOf(IllegalTransitionException.class);
+  }
+
+  @Test
+  void publishEventRejectsAVersionTheCallerHasNotSeen() {
+    var created = service.createEvent(command("Concert", Duration.ofDays(30)));
+
+    assertThatThrownBy(() -> service.publishEvent(created.id(), created.version() + 1))
+        .isInstanceOf(ConcurrentUpdateException.class)
+        .hasMessage("event " + created.id() + " was changed by someone else; reload and retry")
+        .hasNoCause();
+    assertThat(service.getEvent(created.id()).orElseThrow().status())
+        .isEqualTo(new EventStatus.Draft());
   }
 
   @Test
   void aStaleCopyCannotOverwriteANewerSave() {
     var created = service.createEvent(command("Concert", Duration.ofDays(30)));
     var staleCopy = service.getEvent(created.id()).orElseThrow();
-    service.publishEvent(created.id());
+    service.publishEvent(created.id(), created.version());
 
     staleCopy.cancel(NOW, "Cancelled from an old screen");
     assertThatThrownBy(() -> eventRepository.save(staleCopy))
@@ -118,8 +131,8 @@ class EventServiceTest {
     var later = service.createEvent(command("Later", Duration.ofDays(20)));
     var sooner = service.createEvent(command("Sooner", Duration.ofDays(10)));
     service.createEvent(command("Draft", Duration.ofDays(5)));
-    service.publishEvent(later.id());
-    service.publishEvent(sooner.id());
+    service.publishEvent(later.id(), later.version());
+    service.publishEvent(sooner.id(), sooner.version());
 
     var firstPage =
         service.listEvents(new ListEvents.Query(Set.of(Code.PUBLISHED), new PageRequest(0, 1)));
